@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config({ path: ".env.example" });
 require("dotenv").config();
 
 const COMPILER_SETTINGS = {
@@ -15,16 +16,19 @@ const MAINNET_RPC_URL =
   process.env.MAINNET_RPC_URL ||
   process.env.ALCHEMY_MAINNET_RPC_URL ||
   "https://eth-mainnet.alchemyapi.io/v2/your-api-key";
+const GOERLI_RPC_URL =
+  process.env.GOERLI_RPC_URL ||
+  process.env.ALCHEMY_GOERLI_RPC_URL ||
+  "https://eth-mainnet.alchemyapi.io/v2/your-api-key";
 const POLYGON_MAINNET_RPC_URL =
   process.env.POLYGON_MAINNET_RPC_URL ||
+  process.env.ALCHEMY_POLYGON_MAINNET_RPC_URL ||
   "https://polygon-mainnet.alchemyapi.io/v2/your-api-key";
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
 const MUMBAI_RPC_URL =
   process.env.MUMBAI_RPC_URL ||
+  process.env.ALCHEMY_MUMBAI_RPC_URL ||
   "https://polygon-mumbai.g.alchemy.com/v2/your-api-key";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-// optional
-const MNEMONIC = process.env.MNEMONIC || "Your mnemonic";
 const FORKING_BLOCK_NUMBER = parseInt(process.env.FORKING_BLOCK_NUMBER) || 0;
 
 // Your API key for Etherscan, obtain one at https://etherscan.io/
@@ -33,6 +37,7 @@ const ETHERSCAN_API_KEY =
 const POLYGONSCAN_API_KEY =
   process.env.POLYGONSCAN_API_KEY || "Your polygonscan API key";
 const REPORT_GAS = process.env.REPORT_GAS || false;
+const defaultNetwork = process.env.DEFAULT_NETWORK || "hardhat";
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -66,21 +71,14 @@ module.exports = {
     localhost: {
       chainId: 31337,
     },
-    sepolia: {
-      url: SEPOLIA_RPC_URL !== undefined ? SEPOLIA_RPC_URL : "",
-      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-      //   accounts: {
-      //     mnemonic: MNEMONIC,
-      //   },
-      chainId: 11155111,
-    },
     mainnet: {
       url: MAINNET_RPC_URL,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
-      //   accounts: {
-      //     mnemonic: MNEMONIC,
-      //   },
       chainId: 1,
+    },
+    goerli: {
+      url: GOERLI_RPC_URL,
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
     polygon: {
       url: POLYGON_MAINNET_RPC_URL,
@@ -93,7 +91,7 @@ module.exports = {
       chainId: 80001,
     },
   },
-  defaultNetwork: "hardhat",
+  defaultNetwork,
   etherscan: {
     // yarn hardhat verify --network <NETWORK> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
     apiKey: {
