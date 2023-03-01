@@ -32,6 +32,8 @@ contract VOREvent is ERC721 {
     string public description;
     address public issuer;
     EventState public state;
+    uint256 startedTime;
+    uint256 endedTime;
 
     constructor(
         string memory _name,
@@ -128,12 +130,14 @@ contract VOREvent is ERC721 {
             "Only planned event can be started"
         );
         state = EventState.STARTED;
+        startedTime = block.timestamp;
     }
 
     function endEvent() public {
         require(msg.sender == issuer, "Only organizer can start event");
         require(state == EventState.STARTED, "Only started event can be ended");
         state = EventState.ENDED;
+        endedTime = block.timestamp;
     }
 
     function _beforeTokenTransfer(
