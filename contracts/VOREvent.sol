@@ -60,6 +60,21 @@ contract VOREvent is ERC721 {
         _safeMint(msg.sender, _tokenId);
     }
 
+    function burn(uint256 _tokenId) public {
+        require(state == EventState.ENDED, "Event must be ended");
+        require(
+            badges[_tokenId].state == BadgeState.ACCEPTED,
+            "Badge is in invalid state"
+        );
+        require(
+            msg.sender == badges[_tokenId].recipient || msg.sender == issuer,
+            "Only organizer or recepient can burn badge"
+        );
+        _burn(_tokenId);
+        Badge memory zero;
+        badges[_tokenId] = zero;
+    }
+
     function removeBadge(uint256 _tokenId) public {
         require(msg.sender == issuer, "Only organizer can remove badge");
         require(state == EventState.PLANNED, "Event is already started");
@@ -131,6 +146,9 @@ contract VOREvent is ERC721 {
             (_to == address(0) &&
                 _from == issuer &&
                 badges[_tokenId].state == BadgeState.UNASSIGNED) ||
+                (_to == address(0) &&
+                    _from == badges[_tokenId].recipient &&
+                    badges[_tokenId].state == BadgeState.ACCEPTED) ||
                 // mint
                 (_from == address(0) &&
                     _to == issuer &&

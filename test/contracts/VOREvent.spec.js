@@ -146,5 +146,18 @@ const { expect } = require("chai");
         await expect(contract.connect(recepient1).reject(2)).to.be.revertedWith(
           "Badge is in invalid state"
         );
+
+        // burn accepted badge
+        await contract.connect(recepient1).burn(1);
+
+        // cannot burn rejected badge
+        await expect(contract.connect(recepient1).burn(2)).to.be.revertedWith(
+          "Badge is in invalid state"
+        );
+
+        // cannot burn badge that does not exist
+        await expect(contract.connect(recepient1).burn(3)).to.be.revertedWith(
+          "Badge is in invalid state"
+        );
       });
     });
