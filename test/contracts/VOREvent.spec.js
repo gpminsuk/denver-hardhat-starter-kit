@@ -7,6 +7,7 @@ const { expect } = require("chai");
   ? describe.skip
   : describe("VOREvent unit test", async function () {
       async function deployContract() {
+        console.log((await ethers.provider.getBlock("latest")).number);
         const [deployer] = await ethers.getSigners();
         const factory = await ethers.getContractFactory("VOREvent");
         const contract = await factory.deploy(
