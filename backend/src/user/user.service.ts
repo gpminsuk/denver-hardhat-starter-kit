@@ -51,7 +51,7 @@ export class UserService {
   async getEventFromAddress(address: string) {
     const contract = new this.web3.eth.Contract(
       this.VOREvent.abi as any,
-      "0x52DFc252Ce40ae2959174DE03060064d13CFC2f0"
+      address
     );
     const state = await contract.methods.state().call();
     const startedTime = await contract.methods.startedTime().call();
