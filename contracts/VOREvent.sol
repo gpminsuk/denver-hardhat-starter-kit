@@ -32,8 +32,8 @@ contract VOREvent is ERC721 {
     string public description;
     address public issuer;
     EventState public state;
-    uint256 startedTime;
-    uint256 endedTime;
+    uint256 public startedTime;
+    uint256 public endedTime;
 
     constructor(
         string memory _name,

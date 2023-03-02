@@ -56,7 +56,8 @@
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
     "sharp": "^0.31.3",
-    "string-similarity": "^4.0.4"
+    "string-similarity": "^4.0.4",
+    "web3": "^1.8.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.1.3",

@@ -26,7 +26,13 @@ export class User {
   publicAddress: string;
 
   @Prop()
-  eventAddresses: string[];
+  ongoingEvents: string[];
+
+  @Prop()
+  futureEvents: string[];
+
+  @Prop()
+  pastEvents: string[];
 
   @Prop()
   invitedAddresses: string[];

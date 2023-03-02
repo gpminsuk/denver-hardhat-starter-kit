@@ -24,6 +24,12 @@ export class UserController {
     return await this.userService.addEvent(req.user.email, body);
   }
 
+  @Get("/events")
+  @UseGuards(MagicAuthGuard)
+  async getOngoingEvents(@Req() req) {
+    return await this.userService.getEvents(req.user.email);
+  }
+
   @Post("/invite/:id")
   @UseGuards(MagicAuthGuard)
   async inviteUser(@Req() req, @Body() body: InviteUserDto) {
