@@ -23,74 +23,28 @@ const { expect } = require("chai");
         const [deployer, recepient1, recepient2] = await ethers.getSigners();
         const contract = await loadFixture(deployContract);
 
-        // cannot award badges before the event ends
+        // cannot award badges before it's created
         await expect(contract.award(recepient1.address, 1)).to.be.revertedWith(
-          "Event is not ended yet"
+          "Badge is in invalid state"
         );
 
         // can add badges
-        await contract.addBadge("1st place", "Prize for the first place", 1);
-        await contract.addBadge("2nd place", "Prize for the second place", 2);
-        await contract.addBadge("3rd place", "Prize for the third place", 3);
-
-        // cannot remove badge that does not exist
-        await expect(contract.removeBadge(4)).to.be.revertedWith(
-          "Badge not found"
+        await contract.addBadges(
+          ["1st place", "2nd place", "3rd place"],
+          [
+            "Prize for the first place",
+            "Prize for the second place",
+            "Prize for the third place",
+          ],
+          [1, 2, 3]
         );
 
         // can remove badge that exists
-        await contract.removeBadge(3);
+        await contract.removeBadges([3]);
 
-        // cannot end event before started
-        await expect(contract.endEvent()).to.be.revertedWith(
-          "Only started event can be ended"
-        );
-
-        // start the event
-        await contract.startEvent();
-
-        // cannot start event twice
-        await expect(contract.startEvent()).to.be.revertedWith(
-          "Only planned event can be started"
-        );
-
-        // cannot add badges after the event starts
         await expect(
-          contract.addBadge("3rd place", "Prize for the third place", 3)
-        ).to.be.revertedWith("Event is already started");
-
-        // cannot remove badges after the event starts
-        await expect(contract.removeBadge(3)).to.be.revertedWith(
-          "Event is already started"
-        );
-
-        // cannot award badges before the event ends
-        await expect(contract.award(recepient1.address, 1)).to.be.revertedWith(
-          "Event is not ended yet"
-        );
-
-        // end the event
-        await contract.endEvent();
-
-        // cannot end event twice
-        await expect(contract.endEvent()).to.be.revertedWith(
-          "Only started event can be ended"
-        );
-
-        // cannot start ended event again
-        await expect(contract.startEvent()).to.be.revertedWith(
-          "Only planned event can be started"
-        );
-
-        // cannot add badges after the event starts
-        await expect(
-          contract.addBadge("3rd place", "Prize for the third place", 3)
-        ).to.be.revertedWith("Event is already started");
-
-        // cannot remove badges after the event starts
-        await expect(contract.removeBadge(3)).to.be.revertedWith(
-          "Event is already started"
-        );
+          contract.addBadges(["3rd place"], ["Prize for the third place"], [2])
+        ).to.be.revertedWith("Badge already exists");
 
         // cannot award badges to organizer
         await expect(contract.award(deployer.address, 1)).to.be.revertedWith(

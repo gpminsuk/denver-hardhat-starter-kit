@@ -1,17 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract VOREvent is ERC721 {
-    enum EventState {
-        PLANNED,
-        STARTED,
-        ENDED
-    }
-
     enum BadgeState {
         NONE,
         UNASSIGNED,
@@ -31,9 +24,6 @@ contract VOREvent is ERC721 {
 
     string public description;
     address public issuer;
-    EventState public state;
-    uint256 public startedTime;
-    uint256 public endedTime;
 
     constructor(
         string memory _name,
@@ -42,28 +32,38 @@ contract VOREvent is ERC721 {
     ) ERC721(_name, "VORB") {
         description = _description;
         issuer = _issuer;
-        state = EventState.PLANNED;
     }
 
-    function addBadge(
-        string memory _name,
-        string memory _description,
-        uint256 _tokenId
+    function addBadges(
+        string[] memory _names,
+        string[] memory _descriptions,
+        uint256[] memory _tokenIds
     ) public {
         require(msg.sender == issuer, "Only organizer can add badge");
-        require(state == EventState.PLANNED, "Event is already started");
-        Badge memory badge = Badge({
-            state: BadgeState.UNASSIGNED,
-            recipient: address(0),
-            name: _name,
-            description: _description
-        });
-        badges[_tokenId] = badge;
-        _safeMint(msg.sender, _tokenId);
+        require(
+            _names.length == _descriptions.length &&
+                _names.length == _tokenIds.length,
+            "Invaid input"
+        );
+        for (uint256 i = 0; i < _names.length; i++) {
+            require(
+                badges[_tokenIds[i]].state == BadgeState.NONE,
+                "Badge already exists"
+            );
+        }
+        for (uint256 i = 0; i < _names.length; i++) {
+            Badge memory badge = Badge({
+                state: BadgeState.UNASSIGNED,
+                recipient: address(0),
+                name: _names[i],
+                description: _descriptions[i]
+            });
+            badges[_tokenIds[i]] = badge;
+            _safeMint(msg.sender, _tokenIds[i]);
+        }
     }
 
     function burn(uint256 _tokenId) public {
-        require(state == EventState.ENDED, "Event must be ended");
         require(
             badges[_tokenId].state == BadgeState.ACCEPTED,
             "Badge is in invalid state"
@@ -77,19 +77,18 @@ contract VOREvent is ERC721 {
         badges[_tokenId] = zero;
     }
 
-    function removeBadge(uint256 _tokenId) public {
+    function removeBadges(uint256[] memory _tokenIds) public {
         require(msg.sender == issuer, "Only organizer can remove badge");
-        require(state == EventState.PLANNED, "Event is already started");
-        require(badges[_tokenId].state != BadgeState.NONE, "Badge not found");
-        _burn(_tokenId);
-        Badge memory zero;
-        badges[_tokenId] = zero;
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            _burn(_tokenIds[i]);
+            Badge memory zero;
+            badges[_tokenIds[i]] = zero;
+        }
     }
 
     function award(address _to, uint256 _tokenId) public {
         require(msg.sender == issuer, "Only organizer can award badge");
         require(_to != issuer, "Cannot award badge to organizer");
-        require(state == EventState.ENDED, "Event is not ended yet");
         require(
             badges[_tokenId].state == BadgeState.UNASSIGNED,
             "Badge is in invalid state"
@@ -123,23 +122,6 @@ contract VOREvent is ERC721 {
         badges[_tokenId].state = BadgeState.REJECTED;
     }
 
-    function startEvent() public {
-        require(msg.sender == issuer, "Only organizer can start event");
-        require(
-            state == EventState.PLANNED,
-            "Only planned event can be started"
-        );
-        state = EventState.STARTED;
-        startedTime = block.timestamp;
-    }
-
-    function endEvent() public {
-        require(msg.sender == issuer, "Only organizer can start event");
-        require(state == EventState.STARTED, "Only started event can be ended");
-        state = EventState.ENDED;
-        endedTime = block.timestamp;
-    }
-
     function _beforeTokenTransfer(
         address _from,
         address _to,
@@ -147,9 +129,7 @@ contract VOREvent is ERC721 {
     ) internal override {
         require(
             // burn
-            (_to == address(0) &&
-                _from == issuer &&
-                badges[_tokenId].state == BadgeState.UNASSIGNED) ||
+            (_to == address(0) && _from == issuer) ||
                 (_to == address(0) &&
                     _from == badges[_tokenId].recipient &&
                     badges[_tokenId].state == BadgeState.ACCEPTED) ||
@@ -160,7 +140,6 @@ contract VOREvent is ERC721 {
                 // award
                 (_to != issuer &&
                     _from == issuer &&
-                    state == EventState.ENDED &&
                     badges[_tokenId].state == BadgeState.ACCEPTED),
             "Invalid transfer"
         );
