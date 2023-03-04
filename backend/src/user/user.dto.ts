@@ -5,6 +5,13 @@ export interface AddUserDto {
   magicIdToken: string;
 }
 
+export interface QueueAwardDto {
+  assignments: {
+    email: string;
+    tokenId: string;
+  }[];
+}
+
 export interface InviteUserDto {
   contractAddress: string;
 }

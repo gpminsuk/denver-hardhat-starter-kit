@@ -42,10 +42,6 @@ const { expect } = require("chai");
         // can remove badge that exists
         await contract.removeBadges([3]);
 
-        await expect(
-          contract.addBadges(["3rd place"], ["Prize for the third place"], [2])
-        ).to.be.revertedWith("Badge already exists");
-
         // cannot award badges to organizer
         await expect(contract.award(deployer.address, 1)).to.be.revertedWith(
           "Cannot award badge to organizer"
@@ -114,6 +110,7 @@ const { expect } = require("chai");
           "Badge is in invalid state"
         );
 
-        await contract.getBadges([1]);
+        console.log(await contract.tokenIdCounter());
+        console.log(await contract.getBadges());
       });
     });

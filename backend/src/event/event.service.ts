@@ -7,21 +7,21 @@ import fs from "fs";
 import _ from "lodash";
 import { nanoid } from "nanoid";
 import bluebird from "bluebird";
-import { AddBadgeDto, AddEventDto } from "./event.dto";
-import { UserService } from "src/user/user.service";
+import { AddEventDto } from "./event.dto";
 import { Magic } from "@magic-sdk/admin";
+import { User, UserDocument } from "src/user/user.schema";
 
 @Injectable()
 export class EventService {
   magic: Magic;
   web3: Web3;
-  magicWeb3: Web3;
   VOREvent: any;
 
   constructor(
     @InjectModel(Event.name)
     private eventModel: Model<EventDocument>,
-    private userService: UserService
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>
   ) {
     this.magic = new Magic(process.env.MAGIC_SECRET_KEY);
     this.VOREvent = JSON.parse(
@@ -30,35 +30,53 @@ export class EventService {
         .toString()
     );
     this.web3 = new Web3(
-      "https://eth-goerli.g.alchemy.com/v2/XPkPPwpNYWgoobCevUlXSq-sz6av9RNm"
+      "https://polygon-mumbai.g.alchemy.com/v2/-CuvhStLwPmHVIZ4SlJrmJ2ZLploxpJd"
     );
-    // @ts-ignore
-    this.magicWeb3 = new Web3(this.magic.rpcProvider);
   }
 
-  async getEventFromAddress(address: string, tokenIds: number[]) {
+  async getEventFromAddress(address: string) {
     const contract = new this.web3.eth.Contract(
       this.VOREvent.abi as any,
       address
     );
+    const name = await contract.methods.name().call();
     const description = await contract.methods.description().call();
     const issuer = await contract.methods.issuer().call();
-    const badges = await contract.methods.getBadges(tokenIds).call();
-
+    const badges = await contract.methods.getBadges().call();
+    const users = await this.userModel.find({
+      publicAddress: { $in: badges.map((badge) => badge.recipient) },
+    });
+    const usersMap = _.keyBy(users, (e) => e.publicAddress);
     return {
       address,
-      name: "Event",
+      name,
       description,
       issuer,
-      badges,
+      badges: _.values(
+        _.groupBy(
+          badges.map(
+            ([state, recipient, name, description, group], tokenId) => ({
+              tokenId: tokenId + 1,
+              state,
+              email: usersMap[recipient]?.email,
+              recipient,
+              name,
+              description,
+              group,
+            })
+          ),
+          (badge) => badge.group
+        )
+      ),
     };
   }
 
   async getEvents(organizer: string) {
     const events = await this.eventModel.find({ organizer }).lean();
+    console.log(events, organizer);
     return await bluebird.map(events, async (event) => ({
       ...event,
-      ...(await this.getEventFromAddress(event.address, event.badges)),
+      ...(await this.getEventFromAddress(event.address)),
     }));
   }
 
@@ -66,7 +84,7 @@ export class EventService {
     const event = await this.eventModel.findOne({ id }).lean();
     return {
       ...event,
-      ...(await this.getEventFromAddress(event.address, event.badges)),
+      ...(await this.getEventFromAddress(event.address)),
     };
   }
 
@@ -81,51 +99,51 @@ export class EventService {
     );
   }
 
-  async addBadge(id: string, organizer: string, body: AddBadgeDto) {
-    const event = await this.eventModel.findOne({ id, organizer });
-    const user = await this.userService.getUserById(organizer);
-    console.log(id, organizer, event, user, { id, organizer });
-    const tokenId = event.badges.length + 1;
-    const contract = new this.web3.eth.Contract(
-      this.VOREvent.abi as any,
-      event.address
-    );
-    const txObject = {
-      from: user.publicAddress,
-      to: event.address,
-      value: contract.methods
-        .addBadges([body.title], [body.description], [tokenId])
-        .encodeABI(),
-    };
-    console.log(1);
-    const signedTx = await this.web3.eth.signTransaction(txObject);
-    const receipt = await this.web3.eth.sendSignedTransaction(signedTx.raw);
-    console.log(signedTx, receipt);
-    /*
-    this.magic.rpcProvider.
-    const params = [user.publicAddress, signTypedDataV4Payload];
-    const method = "eth_signTypedData_v3";
-    const signature = await m.rpcProvider.request({
-      jsonrpc: "2.0",
-      method,
-      params,
-    });
-    console.log("signature", signature);
-    await contract.methods
-      .addBadges([body.title], [body.description], [tokenId])
-      .send({ from: user.publicAddress });
-    return await this.eventModel.findOneAndUpdate(
-      { id, organizer },
-      { $push: { badges: tokenId } },
-      { new: true }
-    );*/
-  }
-
   async removeBadge(address: string, tokenId: string) {
     return await this.eventModel.findOneAndUpdate(
       { address: address },
       { $pull: { badges: tokenId } },
       { new: true }
     );
+  }
+
+  async awardBadge(
+    organizer: string,
+    id: string,
+    tokenId: string,
+    email: string
+  ) {
+    await this.eventModel.findOneAndUpdate(
+      { id, organizer },
+      { $set: { [`awardedBadges.${tokenId}`]: email } },
+      { new: true }
+    );
+    return await this.userModel.findOne({ email });
+  }
+
+  async acceptBadge(id: string, tokenId: string, email: string) {
+    return await this.eventModel.findOneAndUpdate(
+      { id, [`awardedBadges.id".${tokenId}`]: email },
+      {
+        $unset: { [`awardedBadges.id".${tokenId}`]: email },
+        $set: { [`acceptedBadges.id".${tokenId}`]: email },
+      },
+      { new: true }
+    );
+  }
+
+  async rejectBadge(id: string, tokenId: string, email: string) {
+    return await this.eventModel.findOneAndUpdate(
+      { id, [`awardedBadges.${tokenId}`]: email },
+      {
+        $unset: { [`awardedBadges.${tokenId}`]: email },
+        $set: { [`rejectBadges.${tokenId}`]: email },
+      },
+      { new: true }
+    );
+  }
+
+  async getAwardedEvents(userId: string) {
+    return await this.eventModel.find({ awardedUsers: { $in: userId } });
   }
 }

@@ -1,6 +1,14 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
 import { MagicAuthGuard } from "src/auth/magic-auth.guard";
-import { AddUserDto, InviteUserDto } from "./user.dto";
+import { AddUserDto, QueueAwardDto } from "./user.dto";
 import { UserService } from "./user.service";
 
 @Controller("/user")
@@ -18,9 +26,13 @@ export class UserController {
     return await this.userService.addUser(body);
   }
 
-  @Post("/invite/:id")
-  @UseGuards(MagicAuthGuard)
-  async inviteUser(@Req() req, @Body() body: InviteUserDto) {
-    return await this.userService.inviteUser(req.user.email, body);
+  @Get("/users")
+  async getUsers(@Query("emails") emails: string) {
+    return await this.userService.getUsers(emails.split(","));
+  }
+
+  @Post("/users/queue")
+  async queueAward(@Body() body: QueueAwardDto) {
+    return await this.userService.queueAward(body);
   }
 }

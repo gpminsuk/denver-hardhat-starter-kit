@@ -3,11 +3,6 @@ import { Document } from "mongoose";
 
 export type UserDocument = User & Document;
 
-export enum Kind {
-  Organization,
-  User,
-}
-
 @Schema({ timestamps: true })
 export class User {
   @Prop()
@@ -17,13 +12,13 @@ export class User {
   magicIdToken: string;
 
   @Prop()
-  kind: Kind;
-
-  @Prop()
   email: string;
 
   @Prop()
   publicAddress: string;
+
+  @Prop()
+  pendingBadages: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

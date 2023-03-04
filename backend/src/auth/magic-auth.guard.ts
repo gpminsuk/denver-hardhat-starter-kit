@@ -16,18 +16,18 @@ export class MagicStrategy extends PassportStrategy(Strategy, "magic") {
         .getUserByDid(did)
         .then(async (user) => {
           if (user) {
-            done(undefined, user);
+            done(undefined, { ...user, id: user._id });
           } else {
             const metadata = await this.magic.users.getMetadataByToken(
               req.headers["magic-token"]
             );
-            user = await this.userService.addUser({
+            const newUser = await this.userService.addUser({
               did,
               email: metadata.email,
               publicAddress: metadata.publicAddress,
               magicIdToken: req.headers["magic-token"],
             });
-            done(undefined, user);
+            done(undefined, { ...user, id: newUser._id });
           }
         })
         .catch((err) => {

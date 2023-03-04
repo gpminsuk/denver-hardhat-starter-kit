@@ -8,7 +8,7 @@ import {
   Body,
 } from "@nestjs/common";
 import { MagicAuthGuard } from "src/auth/magic-auth.guard";
-import { AddBadgeDto, AddEventDto } from "./event.dto";
+import { AddEventDto, AwardBadgeDto } from "./event.dto";
 import { EventService } from "./event.service";
 
 @Controller("/event")
@@ -32,9 +32,31 @@ export class EventController {
     return await this.eventService.addEvent(req.user.id, body);
   }
 
-  @Post("/:id/badge")
+  @Post("/:id/:tokenId/award")
   @UseGuards(MagicAuthGuard)
-  async addBadge(@Req() req, @Param("id") id, @Body() body: AddBadgeDto) {
-    return await this.eventService.addBadge(id, req.user.id, body);
+  async awardBadge(
+    @Req() req,
+    @Param("id") id,
+    @Param("tokenId") tokenId,
+    @Body() body: AwardBadgeDto
+  ) {
+    return await this.eventService.awardBadge(
+      req.user.id,
+      id,
+      tokenId,
+      body.email
+    );
+  }
+
+  @Post("/:id/:tokenId/accept")
+  @UseGuards(MagicAuthGuard)
+  async acceptBadge(@Req() req, @Param("id") id, @Param("tokenId") tokenId) {
+    return await this.eventService.acceptBadge(id, tokenId, req.user.email);
+  }
+
+  @Post("/:id/:tokenId/reject")
+  @UseGuards(MagicAuthGuard)
+  async rejectBadge(@Req() req, @Param("id") id, @Param("tokenId") tokenId) {
+    return await this.eventService.rejectBadge(id, tokenId, req.user.email);
   }
 }

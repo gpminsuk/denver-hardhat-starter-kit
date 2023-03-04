@@ -3,7 +3,6 @@ export interface AddEventDto {
   badges: string[];
 }
 
-export interface AddBadgeDto {
-  title: string;
-  description: string;
+export interface AwardBadgeDto {
+  email: string;
 }

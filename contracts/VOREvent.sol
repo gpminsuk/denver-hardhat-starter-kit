@@ -18,12 +18,14 @@ contract VOREvent is ERC721 {
         address recipient;
         string name;
         string description;
+        uint256 group;
     }
 
     mapping(uint256 => Badge) private badges;
 
     string public description;
     address public issuer;
+    uint256 public tokenIdCounter;
 
     constructor(
         string memory _name,
@@ -32,18 +34,13 @@ contract VOREvent is ERC721 {
     ) ERC721(_name, "VORB") {
         description = _description;
         issuer = _issuer;
+        tokenIdCounter = 1;
     }
 
-    function getBadges(uint256[] memory _tokenIds)
-        public
-        view
-        returns (Badge[] memory)
-    {
-        Badge[] memory b = new Badge[](_tokenIds.length);
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            if (badges[_tokenIds[i]].state != BadgeState.NONE) {
-                b[i] = badges[_tokenIds[i]];
-            }
+    function getBadges() public view returns (Badge[] memory) {
+        Badge[] memory b = new Badge[](tokenIdCounter - 1);
+        for (uint256 i = 0; i < tokenIdCounter - 1; i++) {
+            b[i] = badges[i + 1];
         }
         return b;
     }
@@ -51,30 +48,26 @@ contract VOREvent is ERC721 {
     function addBadges(
         string[] memory _names,
         string[] memory _descriptions,
-        uint256[] memory _tokenIds
+        uint256[] memory _groups
     ) public {
         require(msg.sender == issuer, "Only organizer can add badge");
         require(
             _names.length == _descriptions.length &&
-                _names.length == _tokenIds.length,
+                _names.length == _groups.length,
             "Invaid input"
         );
-        for (uint256 i = 0; i < _names.length; i++) {
-            require(
-                badges[_tokenIds[i]].state == BadgeState.NONE,
-                "Badge already exists"
-            );
-        }
         for (uint256 i = 0; i < _names.length; i++) {
             Badge memory badge = Badge({
                 state: BadgeState.UNASSIGNED,
                 recipient: address(0),
                 name: _names[i],
-                description: _descriptions[i]
+                description: _descriptions[i],
+                group: _groups[i]
             });
-            badges[_tokenIds[i]] = badge;
-            _safeMint(msg.sender, _tokenIds[i]);
+            badges[tokenIdCounter + i] = badge;
+            _safeMint(msg.sender, tokenIdCounter + i);
         }
+        tokenIdCounter = tokenIdCounter + _names.length;
     }
 
     function burn(uint256 _tokenId) public {

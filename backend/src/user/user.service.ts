@@ -1,21 +1,26 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { AddUserDto, InviteUserDto } from "./user.dto";
+import { AddUserDto, QueueAwardDto } from "./user.dto";
 import Web3 from "web3";
 import { User, UserDocument } from "./user.schema";
 import _ from "lodash";
 import fs from "fs";
+import { EventService } from "src/event/event.service";
+import { Magic } from "@magic-sdk/admin";
 
 @Injectable()
 export class UserService {
+  magic: Magic;
   web3: Web3;
   VOREvent: any;
 
   constructor(
     @InjectModel(User.name)
-    private userModel: Model<UserDocument>
+    private userModel: Model<UserDocument>,
+    private eventService: EventService
   ) {
+    this.magic = new Magic(process.env.MAGIC_SECRET_KEY);
     this.VOREvent = JSON.parse(
       fs
         .readFileSync("../build/artifacts/contracts/VOREvent.sol/VOREvent.json")
@@ -40,20 +45,37 @@ export class UserService {
     );
   }
 
-  async inviteUser(email: string, inviteUserDto: InviteUserDto) {
-    return await this.userModel.findOneAndUpdate(
-      { email },
-      { $push: { invitedAddresses: inviteUserDto.contractAddress } },
-      { new: true }
-    );
-  }
-
   async getUserByDid(did: string) {
-    return await this.userModel.findOne({ did });
+    const user = await this.userModel.findOne({ did }).lean();
+    if (user) {
+      const awardedEvents = await this.eventService.getAwardedEvents(user._id);
+      return { ...user, awardedEvents };
+    }
+    return user;
   }
 
   async getUserById(id: string) {
-    return await this.userModel.findOne({ id });
+    const user = await this.userModel.findOne({ id }).lean();
+    if (user) {
+      const awardedEvents = await this.eventService.getAwardedEvents(id);
+      return { ...user, awardedEvents };
+    }
+    return user;
+  }
+
+  async getUsers(emails: string[]) {
+    return await this.userModel
+      .find({ email: { $in: emails }, publicAddress: { $exists: true } })
+      .lean();
+  }
+
+  async queueAward(body: QueueAwardDto) {
+    for (const assignment of body.assignments) {
+      await this.userModel.findOneAndUpdate(
+        { email: assignment.email },
+        { $push: { pendingBadages: assignment.tokenId } }
+      );
+    }
   }
 
   async getAwardCount() {}

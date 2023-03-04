@@ -79,6 +79,7 @@ module.exports = {
     goerli: {
       url: GOERLI_RPC_URL,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+      chainId: 5,
     },
     polygon: {
       url: POLYGON_MAINNET_RPC_URL,
