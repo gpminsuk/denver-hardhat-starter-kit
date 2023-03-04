@@ -107,6 +107,36 @@ export class EventService {
     );
   }
 
+  async getAwardedEvents(email: string) {
+    return await bluebird.map(
+      await this.eventModel.find({
+        awardedBadges: new RegExp(`${email}$`),
+      }),
+      async (event) => {
+        event = await this.getEvent(event.id);
+        event.awardedBadges = _.flatten(_.values(event.badges)).filter(
+          (badge) => badge.email === email && badge.state === "2"
+        );
+        return event;
+      }
+    );
+  }
+
+  async getAcceptedEvents(email: string) {
+    return await bluebird.map(
+      await this.eventModel.find({
+        acceptedBadges: new RegExp(`${email}$`),
+      }),
+      async (event) => {
+        event = await this.getEvent(event.id);
+        event.acceptedBadges = _.flatten(_.values(event.badges)).filter(
+          (badge) => badge.email === email && badge.state === "3"
+        );
+        return event;
+      }
+    );
+  }
+
   async awardBadge(
     organizer: string,
     id: string,
@@ -115,18 +145,19 @@ export class EventService {
   ) {
     await this.eventModel.findOneAndUpdate(
       { id, organizer },
-      { $set: { [`awardedBadges.${tokenId}`]: email } },
+      { $addToSet: { awardedBadges: `${tokenId}:${email}` } },
       { new: true }
     );
+    console.log(await this.userModel.findOne({ email }));
     return await this.userModel.findOne({ email });
   }
 
   async acceptBadge(id: string, tokenId: string, email: string) {
     return await this.eventModel.findOneAndUpdate(
-      { id, [`awardedBadges.id".${tokenId}`]: email },
+      { id, awardedBadges: `${tokenId}:${email}` },
       {
-        $unset: { [`awardedBadges.id".${tokenId}`]: email },
-        $set: { [`acceptedBadges.id".${tokenId}`]: email },
+        $pull: { awardedBadges: `${tokenId}:${email}` },
+        $addToSet: { acceptedBadges: `${tokenId}:${email}` },
       },
       { new: true }
     );
@@ -134,16 +165,16 @@ export class EventService {
 
   async rejectBadge(id: string, tokenId: string, email: string) {
     return await this.eventModel.findOneAndUpdate(
-      { id, [`awardedBadges.${tokenId}`]: email },
+      { id, awardedBadges: `${tokenId}:${email}` },
       {
-        $unset: { [`awardedBadges.${tokenId}`]: email },
-        $set: { [`rejectBadges.${tokenId}`]: email },
+        $pull: { awardedBadges: `${tokenId}:${email}` },
+        $addToSet: { rejectedBadges: `${tokenId}:${email}` },
       },
       { new: true }
     );
   }
 
-  async getAwardedEvents(userId: string) {
+  async getAwardedBadges(userId: string) {
     return await this.eventModel.find({ awardedUsers: { $in: userId } });
   }
 }

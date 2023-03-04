@@ -48,8 +48,13 @@ export class UserService {
   async getUserByDid(did: string) {
     const user = await this.userModel.findOne({ did }).lean();
     if (user) {
-      const awardedEvents = await this.eventService.getAwardedEvents(user._id);
-      return { ...user, awardedEvents };
+      const awardedEvents = await this.eventService.getAwardedEvents(
+        user.email
+      );
+      const acceptedEvents = await this.eventService.getAcceptedEvents(
+        user.email
+      );
+      return { ...user, awardedEvents, acceptedEvents };
     }
     return user;
   }
@@ -57,8 +62,13 @@ export class UserService {
   async getUserById(id: string) {
     const user = await this.userModel.findOne({ id }).lean();
     if (user) {
-      const awardedEvents = await this.eventService.getAwardedEvents(id);
-      return { ...user, awardedEvents };
+      const awardedEvents = await this.eventService.getAwardedEvents(
+        user.email
+      );
+      const acceptedEvents = await this.eventService.getAcceptedEvents(
+        user.email
+      );
+      return { ...user, awardedEvents, acceptedEvents };
     }
     return user;
   }
