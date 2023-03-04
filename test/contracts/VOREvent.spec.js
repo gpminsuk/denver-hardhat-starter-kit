@@ -113,5 +113,7 @@ const { expect } = require("chai");
         await expect(contract.connect(recepient1).burn(3)).to.be.revertedWith(
           "Badge is in invalid state"
         );
+
+        await contract.getBadges([1]);
       });
     });

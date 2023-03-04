@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { AddEventDto, AddUserDto, InviteUserDto } from "./user.dto";
+import { AddUserDto, InviteUserDto } from "./user.dto";
 import Web3 from "web3";
 import { User, UserDocument } from "./user.schema";
 import _ from "lodash";
@@ -40,86 +40,6 @@ export class UserService {
     );
   }
 
-  async addEvent(email: string, addEventDto: AddEventDto) {
-    return await this.userModel.findOneAndUpdate(
-      { email },
-      { $push: { eventAddresses: addEventDto.contractAddress } },
-      { new: true }
-    );
-  }
-
-  async getEventFromAddress(address: string) {
-    const contract = new this.web3.eth.Contract(
-      this.VOREvent.abi as any,
-      address
-    );
-    const state = await contract.methods.state().call();
-    const startedTime = await contract.methods.startedTime().call();
-    const endedTime = await contract.methods.endedTime().call();
-    const description = await contract.methods.description().call();
-    const issuer = await contract.methods.issuer().call();
-
-    return {
-      name: "Event",
-      state,
-      startedTime,
-      endedTime,
-      description,
-      issuer,
-    };
-  }
-
-  async getEvents(email: string) {
-    const user = await this.userModel.findOne({ email });
-    const res = { ongoing: [], future: [], past: [] };
-    for (const address of user.ongoingEvents) {
-      const event = await this.getEventFromAddress(address);
-      if (
-        event.issuer &&
-        _.toLower(event.issuer) !== _.toLower(user.publicAddress)
-      ) {
-        console.error(
-          "You are not the issuer of this event",
-          _.toLower(event.issuer),
-          _.toLower(user.publicAddress)
-        );
-      }
-      res.ongoing.push(event);
-      break;
-    }
-    for (const address of user.futureEvents) {
-      const event = await this.getEventFromAddress(address);
-      if (
-        event.issuer &&
-        _.toLower(event.issuer) !== _.toLower(user.publicAddress)
-      ) {
-        console.error(
-          "You are not the issuer of this event",
-          _.toLower(event.issuer),
-          _.toLower(user.publicAddress)
-        );
-      }
-      res.future.push(event);
-      break;
-    }
-    for (const address of user.pastEvents) {
-      const event = await this.getEventFromAddress(address);
-      if (
-        event.issuer &&
-        _.toLower(event.issuer) !== _.toLower(user.publicAddress)
-      ) {
-        console.error(
-          "You are not the issuer of this event",
-          _.toLower(event.issuer),
-          _.toLower(user.publicAddress)
-        );
-      }
-      res.past.push(event);
-      break;
-    }
-    return res;
-  }
-
   async inviteUser(email: string, inviteUserDto: InviteUserDto) {
     return await this.userModel.findOneAndUpdate(
       { email },
@@ -128,8 +48,12 @@ export class UserService {
     );
   }
 
-  async getUser(email: string) {
-    return await this.userModel.findOne({ email });
+  async getUserByDid(did: string) {
+    return await this.userModel.findOne({ did });
+  }
+
+  async getUserById(id: string) {
+    return await this.userModel.findOne({ id });
   }
 
   async getAwardCount() {}

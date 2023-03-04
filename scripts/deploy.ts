@@ -5,7 +5,7 @@ async function main() {
   const contract = await c.deploy(
     "Chess tournament",
     "The Bear Creek school 2nd grade chess tournament",
-    "0x4a0341c57d4376319857ba382d79e0f67a5e6f8d"
+    "0xfb9ae3e7dfd0a6ef5f1b57850f932d0943ca6da8"
   );
   console.log("Contract deployed to address:", contract.address);
 }

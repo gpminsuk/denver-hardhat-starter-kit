@@ -13,7 +13,7 @@ export class MagicStrategy extends PassportStrategy(Strategy, "magic") {
     super((req: Request, done: VerifiedCallback) => {
       const did = this.magic.token.getIssuer(req.headers["magic-token"]);
       this.userService
-        .getUser(did)
+        .getUserByDid(did)
         .then(async (user) => {
           if (user) {
             done(undefined, user);

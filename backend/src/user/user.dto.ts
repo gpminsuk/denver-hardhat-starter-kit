@@ -5,10 +5,6 @@ export interface AddUserDto {
   magicIdToken: string;
 }
 
-export interface AddEventDto {
-  contractAddress: string;
-}
-
 export interface InviteUserDto {
   contractAddress: string;
 }

@@ -24,18 +24,6 @@ export class User {
 
   @Prop()
   publicAddress: string;
-
-  @Prop()
-  ongoingEvents: string[];
-
-  @Prop()
-  futureEvents: string[];
-
-  @Prop()
-  pastEvents: string[];
-
-  @Prop()
-  invitedAddresses: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

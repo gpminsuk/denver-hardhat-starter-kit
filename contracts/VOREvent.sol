@@ -34,6 +34,20 @@ contract VOREvent is ERC721 {
         issuer = _issuer;
     }
 
+    function getBadges(uint256[] memory _tokenIds)
+        public
+        view
+        returns (Badge[] memory)
+    {
+        Badge[] memory b = new Badge[](_tokenIds.length);
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            if (badges[_tokenIds[i]].state != BadgeState.NONE) {
+                b[i] = badges[_tokenIds[i]];
+            }
+        }
+        return b;
+    }
+
     function addBadges(
         string[] memory _names,
         string[] memory _descriptions,
