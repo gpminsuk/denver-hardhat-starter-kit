@@ -1,15 +1,18 @@
 import {
+  Post,
   Get,
   Controller,
   Param,
   UseGuards,
-  Post,
   Req,
   Body,
+  UseInterceptors,
+  UploadedFile,
 } from "@nestjs/common";
 import { MagicAuthGuard } from "src/auth/magic-auth.guard";
 import { AddEventDto, AwardBadgeDto } from "./event.dto";
 import { EventService } from "./event.service";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @Controller("/event")
 export class EventController {
@@ -58,5 +61,12 @@ export class EventController {
   @UseGuards(MagicAuthGuard)
   async rejectBadge(@Req() req, @Param("id") id, @Param("tokenId") tokenId) {
     return await this.eventService.rejectBadge(id, tokenId, req.user.email);
+  }
+
+  @Post("/file")
+  @UseGuards(MagicAuthGuard)
+  @UseInterceptors(FileInterceptor("file"))
+  async uploadBadgeAttachment(@UploadedFile() file: Express.Multer.File) {
+    return await this.eventService.uploadBadgeAttachment(file);
   }
 }

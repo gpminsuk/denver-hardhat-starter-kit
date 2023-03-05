@@ -4,7 +4,9 @@ import { Model } from "mongoose";
 import { Event, EventDocument } from "./event.schema";
 import Web3 from "web3";
 import fs from "fs";
+import axios from "axios";
 import _ from "lodash";
+import FormData from "form-data";
 import { nanoid } from "nanoid";
 import bluebird from "bluebird";
 import { AddEventDto } from "./event.dto";
@@ -43,6 +45,7 @@ export class EventService {
     const description = await contract.methods.description().call();
     const issuer = await contract.methods.issuer().call();
     const badges = await contract.methods.getBadges().call();
+
     const users = await this.userModel.find({
       publicAddress: { $in: badges.map((badge) => badge.recipient) },
     });
@@ -54,16 +57,23 @@ export class EventService {
       issuer,
       badges: _.values(
         _.groupBy(
-          badges.map(
-            ([state, recipient, name, description, group], tokenId) => ({
-              tokenId: tokenId + 1,
-              state,
-              email: usersMap[recipient]?.email,
-              recipient,
-              name,
-              description,
-              group,
-            })
+          await bluebird.map(
+            badges,
+            async ([state, recipient, name, description, group], tokenId) => {
+              const tokenURI = await contract.methods
+                .tokenURI(tokenId + 1)
+                .call();
+              return {
+                tokenId: tokenId + 1,
+                state,
+                email: usersMap[recipient]?.email,
+                recipient,
+                name,
+                description,
+                group,
+                tokenURI,
+              };
+            }
           ),
           (badge) => badge.group
         )
@@ -148,7 +158,6 @@ export class EventService {
       { $addToSet: { awardedBadges: `${tokenId}:${email}` } },
       { new: true }
     );
-    console.log(await this.userModel.findOne({ email }));
     return await this.userModel.findOne({ email });
   }
 
@@ -176,5 +185,18 @@ export class EventService {
 
   async getAwardedBadges(userId: string) {
     return await this.eventModel.find({ awardedUsers: { $in: userId } });
+  }
+
+  async uploadBadgeAttachment(file: Express.Multer.File) {
+    const form = new FormData();
+    form.append("path", file.buffer);
+    const {
+      data: { Name },
+    } = await axios.post(`https://ipfs.infura.io:5001/api/v0/add`, form, {
+      headers: {
+        Authorization: `Basic ${process.env.INFURA_IPFS_KEY}`,
+      },
+    });
+    return Name;
   }
 }

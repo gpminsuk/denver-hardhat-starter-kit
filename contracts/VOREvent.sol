@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract VOREvent is ERC721 {
@@ -19,6 +18,7 @@ contract VOREvent is ERC721 {
         string name;
         string description;
         uint256 group;
+        string cid;
     }
 
     mapping(uint256 => Badge) private badges;
@@ -48,7 +48,8 @@ contract VOREvent is ERC721 {
     function addBadges(
         string[] memory _names,
         string[] memory _descriptions,
-        uint256[] memory _groups
+        uint256[] memory _groups,
+        string[] memory _cids
     ) public {
         require(msg.sender == issuer, "Only organizer can add badge");
         require(
@@ -62,7 +63,8 @@ contract VOREvent is ERC721 {
                 recipient: address(0),
                 name: _names[i],
                 description: _descriptions[i],
-                group: _groups[i]
+                group: _groups[i],
+                cid: _cids[i]
             });
             badges[tokenIdCounter + i] = badge;
             _safeMint(msg.sender, tokenIdCounter + i);
@@ -154,7 +156,7 @@ contract VOREvent is ERC721 {
     }
 
     function _baseURI() internal view virtual override returns (string memory) {
-        return "https://ipfs.io/ipfs/";
+        return "https://vor.infura-ipfs.io/ipfs/";
     }
 
     function tokenURI(uint256 _tokenId)
@@ -166,9 +168,6 @@ contract VOREvent is ERC721 {
     {
         require(_exists(_tokenId), "URI query for nonexistent token");
         string memory currentBaseURI = _baseURI();
-        return
-            string(
-                abi.encodePacked(currentBaseURI, Strings.toString(_tokenId))
-            );
+        return string(abi.encodePacked(currentBaseURI, badges[_tokenId].cid));
     }
 }

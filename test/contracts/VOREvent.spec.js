@@ -36,7 +36,12 @@ const { expect } = require("chai");
             "Prize for the second place",
             "Prize for the third place",
           ],
-          [1, 2, 3]
+          [1, 2, 3],
+          [
+            "QmVfJ9Y6qDFCEXtZZyKddGjxCb62AVCH5gEY2pC86XBkxp",
+            "QmVfJ9Y6qDFCEXtZZyKddGjxCb62AVCH5gEY2pC86XBkxp",
+            "QmVfJ9Y6qDFCEXtZZyKddGjxCb62AVCH5gEY2pC86XBkxp",
+          ]
         );
 
         // can remove badge that exists
