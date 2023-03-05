@@ -40,6 +40,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
+    "@nestjs/azure-storage": "^3.0.0",
     "dotenv": "^16.0.3",
     "passport-custom": "^1.1.1"
   },

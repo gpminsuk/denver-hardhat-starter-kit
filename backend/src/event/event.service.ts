@@ -12,6 +12,7 @@ import bluebird from "bluebird";
 import { AddEventDto } from "./event.dto";
 import { Magic } from "@magic-sdk/admin";
 import { User, UserDocument } from "src/user/user.schema";
+import { AzureStorageService } from "@nestjs/azure-storage";
 
 @Injectable()
 export class EventService {
@@ -23,7 +24,8 @@ export class EventService {
     @InjectModel(Event.name)
     private eventModel: Model<EventDocument>,
     @InjectModel(User.name)
-    private userModel: Model<UserDocument>
+    private userModel: Model<UserDocument>,
+    private readonly azureStorage: AzureStorageService
   ) {
     this.magic = new Magic(process.env.MAGIC_SECRET_KEY);
     this.VOREvent = JSON.parse(
@@ -102,12 +104,18 @@ export class EventService {
     };
   }
 
-  async addEvent(organizer: string, addEventDto: AddEventDto) {
+  async addEvent(organizer: string, addEventDto: AddEventDto, file: any) {
+    const eventId = nanoid();
+    const url = await this.azureStorage.upload({
+      ...file,
+      fieldname: `event_${eventId}`,
+      originalname: `event_${eventId}`,
+    });
     return await this.eventModel.findOneAndUpdate(
       { address: addEventDto.address },
       {
-        $setOnInsert: { id: nanoid() },
-        $set: { organizer, badges: addEventDto.badges },
+        $setOnInsert: { id: eventId },
+        $set: { organizer, badges: addEventDto.badges, url },
       },
       { upsert: true, new: true }
     );

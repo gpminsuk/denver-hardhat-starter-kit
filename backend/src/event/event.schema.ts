@@ -15,6 +15,9 @@ export class Event {
   address: string;
 
   @Prop()
+  url: string;
+
+  @Prop()
   awardedBadges: string[];
 
   @Prop()

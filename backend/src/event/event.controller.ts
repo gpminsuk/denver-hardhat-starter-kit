@@ -31,8 +31,13 @@ export class EventController {
 
   @Post("/")
   @UseGuards(MagicAuthGuard)
-  async addEvent(@Req() req, @Body() body: AddEventDto) {
-    return await this.eventService.addEvent(req.user.id, body);
+  @UseInterceptors(FileInterceptor("file"))
+  async addEvent(
+    @Req() req,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: AddEventDto
+  ) {
+    return await this.eventService.addEvent(req.user.id, body, file);
   }
 
   @Post("/:id/:tokenId/award")
