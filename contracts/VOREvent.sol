@@ -19,6 +19,7 @@ contract VOREvent is ERC721 {
         string description;
         uint256 group;
         string cid;
+        uint8 category;
     }
 
     mapping(uint256 => Badge) private badges;
@@ -49,12 +50,15 @@ contract VOREvent is ERC721 {
         string[] memory _names,
         string[] memory _descriptions,
         uint256[] memory _groups,
-        string[] memory _cids
+        string[] memory _cids,
+        uint8[] memory _categories
     ) public {
         require(msg.sender == issuer, "Only organizer can add badge");
         require(
             _names.length == _descriptions.length &&
-                _names.length == _groups.length,
+                _names.length == _groups.length &&
+                _names.length == _cids.length &&
+                _names.length == _categories.length,
             "Invaid input"
         );
         for (uint256 i = 0; i < _names.length; i++) {
@@ -64,7 +68,8 @@ contract VOREvent is ERC721 {
                 name: _names[i],
                 description: _descriptions[i],
                 group: _groups[i],
-                cid: _cids[i]
+                cid: _cids[i],
+                category: _categories[i]
             });
             badges[tokenIdCounter + i] = badge;
             _safeMint(msg.sender, tokenIdCounter + i);

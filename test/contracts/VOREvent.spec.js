@@ -41,7 +41,8 @@ const { expect } = require("chai");
             "QmVfJ9Y6qDFCEXtZZyKddGjxCb62AVCH5gEY2pC86XBkxp",
             "QmVfJ9Y6qDFCEXtZZyKddGjxCb62AVCH5gEY2pC86XBkxp",
             "QmVfJ9Y6qDFCEXtZZyKddGjxCb62AVCH5gEY2pC86XBkxp",
-          ]
+          ],
+          [1, 2, 3]
         );
 
         // can remove badge that exists

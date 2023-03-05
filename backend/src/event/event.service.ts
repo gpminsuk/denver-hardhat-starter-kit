@@ -59,7 +59,10 @@ export class EventService {
         _.groupBy(
           await bluebird.map(
             badges,
-            async ([state, recipient, name, description, group], tokenId) => {
+            async (
+              [state, recipient, name, description, group, , category],
+              tokenId
+            ) => {
               const tokenURI = await contract.methods
                 .tokenURI(tokenId + 1)
                 .call();
@@ -71,6 +74,7 @@ export class EventService {
                 name,
                 description,
                 group,
+                category,
                 tokenURI,
               };
             }
@@ -118,32 +122,40 @@ export class EventService {
   }
 
   async getAwardedEvents(email: string) {
-    return await bluebird.map(
-      await this.eventModel.find({
-        awardedBadges: new RegExp(`${email}$`),
-      }),
-      async (event) => {
-        event = await this.getEvent(event.id);
-        event.awardedBadges = _.flatten(_.values(event.badges)).filter(
-          (badge) => badge.email === email && badge.state === "2"
-        );
-        return event;
-      }
+    return _.compact(
+      await bluebird.map(
+        await this.eventModel.find({
+          awardedBadges: new RegExp(`${email}$`),
+        }),
+        async (event) => {
+          event = await this.getEvent(event.id);
+          event.awardedBadges = _.flatten(_.values(event.badges)).filter(
+            (badge) => badge.email === email && badge.state === "2"
+          );
+          if (event.awardedBadges.length > 0) {
+            return event;
+          }
+        }
+      )
     );
   }
 
   async getAcceptedEvents(email: string) {
-    return await bluebird.map(
-      await this.eventModel.find({
-        acceptedBadges: new RegExp(`${email}$`),
-      }),
-      async (event) => {
-        event = await this.getEvent(event.id);
-        event.acceptedBadges = _.flatten(_.values(event.badges)).filter(
-          (badge) => badge.email === email && badge.state === "3"
-        );
-        return event;
-      }
+    return _.compact(
+      await bluebird.map(
+        await this.eventModel.find({
+          acceptedBadges: new RegExp(`${email}$`),
+        }),
+        async (event) => {
+          event = await this.getEvent(event.id);
+          event.acceptedBadges = _.flatten(_.values(event.badges)).filter(
+            (badge) => badge.email === email && badge.state === "3"
+          );
+          if (event.acceptedBadges.length > 0) {
+            return event;
+          }
+        }
+      )
     );
   }
 
